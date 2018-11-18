@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: wp-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: wp-deployment
+      labels:
+        app: wp-test
+    spec:
+      containers:
+      - image: mlerota/wp-kubernetes:build-v12
+        name: wordpress
+        volumeMounts:
+          - name: wp-secrets-mount
+            mountPath: "/etc/wp-secrets"
+            readOnly: true
+        livenessProbe:
+          httpGet: 
+            path: /
+            port: 80
+        ports:
+        - containerPort: 80
+          protocol: TCP
+# Get secret file
+      volumes:
+        - name: wp-secrets-mount
+          secret:
+            secretName: dotenvsite1
+

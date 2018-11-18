@@ -1,56 +1,53 @@
-# WordPress development with Bedrock for Kubernetes
+# WordPress build on Docker for Kubernetes
 
-[Bedrock](https://roots.io/bedrock/) is a modern WordPress stack that helps you get started with the best development tools and project structure.
-
-Much of the philosophy behind Bedrock is inspired by the [Twelve-Factor App](http://12factor.net/) methodology including the [WordPress specific version](https://roots.io/twelve-factor-wordpress/).
+This build is based upon [Ubuntu 18.04](https://www.ubuntu.com/) core docker image and PHP 7.2 packages from official apt
+repository. The build is using WordPress Bedrock [build](https://github.com/mlerota/wordpress-kubernetes) repo for building
+WordPress. The philosophy behind Bedrock is that it's good for Kubernetes deployments because it is inspired by the
+[Twelve-Factor App](http://12factor.net/) methodology and it's good for development of WordPress. 
 
 ## Features
 
-* Better folder structure
-* Dependency management with [Composer](http://getcomposer.org)
-* Easy WordPress configuration with environment specific files
-* Environment variables with [Dotenv](https://github.com/vlucas/phpdotenv)
-* Autoloader for mu-plugins (use regular plugins as mu-plugins)
-* Enhanced security (separated web root and secure passwords with [wp-password-bcrypt](https://github.com/roots/wp-password-bcrypt))
-
-See a complete working example in the [roots-example-project.com repo](https://github.com/roots/roots-example-project.com).
+* Clean 
+* Not complicated
+* Amazon AWS ELB service example 
+* Kubernetes deployment example 
+* Jenkinsfile for automated builds with Jenkins
 
 ## Requirements
 
-* PHP >= 5.6
-* Composer - [Install](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-osx)
+* kubectl - [Install](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* Jenkins 
+* Docker on Jenkins machine - "apt-get install docker.io" is OK
+* Kubernetes cluster
 
 ## Installation
 
-1. Create a new project in a new folder for your project:
+1. Before deployment, create a secret dot_env file for WP/MySQL connection and execute: 
 
-  `composer create-project roots/bedrock your-project-folder-name`
+  `kubectl create secret generic yoursecretname --from-file=./dot_env`
 
-2. Update environment variables in `.env`  file:
-  * `DB_NAME` - Database name
-  * `DB_USER` - Database user
-  * `DB_PASSWORD` - Database password
-  * `DB_HOST` - Database host
-  * `WP_ENV` - Set to environment (`development`, `staging`, `production`)
-  * `WP_HOME` - Full URL to WordPress home (http://example.com)
-  * `WP_SITEURL` - Full URL to WordPress including subdirectory (http://example.com/wp)
-  * `AUTH_KEY`, `SECURE_AUTH_KEY`, `LOGGED_IN_KEY`, `NONCE_KEY`, `AUTH_SALT`, `SECURE_AUTH_SALT`, `LOGGED_IN_SALT`, `NONCE_SALT`
+2. Create two Jenkins pipelines. One from [WP code build](https://github.com/mlerota/wordpress-kubernetes),
+   second for Docker image build (this repo)
 
-  If you want to automatically generate the security keys (assuming you have wp-cli installed locally) you can use the very handy [wp-cli-dotenv-command][wp-cli-dotenv]:
+3. Change servername in nginx/site.conf from WP code build
 
-      wp package install aaemnnosttv/wp-cli-dotenv-command
+4. Change registry from Jenkinsfile to point to your docker repo
 
-      wp dotenv salts regenerate
+5. Give Jenkins permissions to execute docker `usermod -a -G docker jenkins`
 
-  Or, you can cut and paste from the [Roots WordPress Salt Generator][roots-wp-salt].
+6. Configure Jenkins to have permission to execute other jobs. You will see this when you start the build.
 
-3. Add theme(s) in `web/app/themes` as you would for a normal WordPress site.
+7. Configure Jenkins (Manage, Configure system) Shell executable: /bin/bash
 
-4. Set your site vhost document root to `/path/to/site/web/` (`/path/to/site/current/web/` if using deploys)
-
-5. Access WP admin at `http://example.com/wp/wp-admin`
+8. Add your credentials for Docker hub in Jenkins
 
 ## Deploys
 
-Check deployment in Docker 
+1. Check aws-elb-service.yml and change arn and remove/change loadBalancerSourceRanges
+
+2. Check wp-deployment.yml and change the image
+
+3. Deploy Kubernetes pods `kubectl apply -f wp-deployment.yml`
+
+4. Deploy AWS ELB ingress `kubectl apply -f aws-elb-service.yml`
 
