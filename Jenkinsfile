@@ -42,14 +42,14 @@ pipeline {
             }
         }
 
-    	stage('Building image') {
+    	stage('Build Docker image') {
       	    steps {
 		script {
             	dockerImage = docker.build registry + ":build-v$BUILD_NUMBER"
             	}
       	    }
     	}
-        stage('Deploy Image') {
+        stage('Push to Dokerhub') {
       	    steps {
                 script {
           	docker.withRegistry( '', registryCredential ) {
